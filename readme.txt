@@ -4,6 +4,10 @@
 \toolbox has the matrix operations over finite group
 
 ***********************************************
+This project is completed under the supervision of Hoeteck Wee, and
+supported in part by the GWU Computer Science department
+
+***********************************************
 CLLWW12 is based on the paper: J. Chen, H. Lim, S. Ling, H. Wang, H. Wee Shorter IBE and Signatures via Asymmetric Pairings", Section 4. Published in: Pairing 2012
 
 I made improvements to Waters 05 and Waters 09 schemes, both encryption and signature scheme. What I did can be found at the annotation, also, I have a benchmark report, which can be found at: http://student.seas.gwu.edu/~zfwise/crypto/

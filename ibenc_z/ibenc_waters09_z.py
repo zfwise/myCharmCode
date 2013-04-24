@@ -12,12 +12,16 @@ Brent Waters (Pairing-based)
 :Authors:    J Ayo Akinyele
 :Date:       03/2012
 
-:Improved by: Fan Zhang, 3/2013
-:Notes: 1. It works under MNT curve now. However, the size of pk and msk are larger since I need
+:Improved by: Fan Zhang(zfwise@gwu.edu), supported by GWU computer science department
+:Date: 3/2013
+:Notes:
+1. It works under MNT curve now. However, the size of pk and msk are larger since I need
 have some duplicate elements in G2.
 2. u,w, and h has two copies now. One in G1, the other one in G2. They all stored as public params
 3. pre-calculated g2^-alpha, g2^b and stored in msk. This makes the keygen() faster.
 4. The size of public param and msk should be minimal now.
+5. The extract() takes one more params now, which is the mpk. We don't want to
+increse the size of msk by store redundant elements.
 '''
 from charm.toolbox.pairinggroup import ZR,G1,G2,pair
 from charm.toolbox.IBEnc import *

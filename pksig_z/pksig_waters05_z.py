@@ -9,15 +9,13 @@
 :Authors:	Gary Belvin
 :Date:			06/2011
 
-:Improved by: Fan Zhang, 3/2013
-:Note:
+:Improved by: Fan Zhang(zfwise@gwu.edu), supported by GWU computer science department
+:Date: 3/2013
+:Notes:
 1. e(g1,g2) is pre-calculated as part of public parameters.
 2. g1 and g2 have been swapped. In the original scheme, signature happens in G2
 but now, it happens in G1.
-3. Previous implemenaton was trying to multiply an element in G1 with an element
-in ZR, which sometimes cause the compiler throw an error. I fixed that problem
-by having U_z in ZR and calculate g^U_z. Now, elements are in the right group.
-4. I stored U_z and u as part of mk. This will speed up the sign() a lot.
+3. I stored U_z and u as part of mk. This will speed up the sign() a lot.
 The trick is that, instead of doing exponential operation and then multiply
 all together, I compute the exponent first and then do one exponential operation
 ''' 

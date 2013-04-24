@@ -9,14 +9,13 @@ Shorter IBE and Signatures via Asymmetric Pairings
 * type:           signature (identity-based)
 * setting:        bilinear groups (asymmetric)
 
-:Authors:    Fan Zhang
-:Date:       3/2013
-:Note:  This is a improved version of pksig_cllww12_swap, which faster and a little bit different
-from what the paper described. But the security proof still stand.
-The trick is that, instead of store g2^(d1*) and g2^(d2*), I store d1* and d2*
-directly in the msk. When extracting a sk, I'll compute the exponent, exp, first
-and them, apply the g2^exp. This will reduce the exponential operation from 8
-to 4.
+:Improved by: Fan Zhang(zfwise@gwu.edu), supported by GWU computer science department
+:Date: 3/2013
+:Notes:
+1. We swapped g1 and g2 to make signature faster.
+2. Change all the pair($params_1$, $params_2$) to pair($params_2$, $params_1$) is required.
+3.The code is similar with the encryption scheme, especially in setup() function.
+4. Same trick in the encryption scheme applied here.
 '''
 from charm.toolbox.pairinggroup import PairingGroup,ZR,G1,G2,GT,pair
 from charm.core.crypto.cryptobase import *

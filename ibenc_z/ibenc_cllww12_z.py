@@ -9,16 +9,13 @@ Shorter IBE and Signatures via Asymmetric Pairings
 * type:           encryption (identity-based)
 * setting:        bilinear groups (asymmetric)
 
-:Authors:    Fan Zhang
+:Authors:    Fan Zhang(zfwise@gwu.edu), supported by GWU computer science department
 :Date:       3/2013
-:Note:  This is a improved version, which faster and a little bit different
-from what the paper described. But the security proof still stand.
-The trick is that, instead of store g2^(d1*) and g2^(d2*), I store d1* and d2*
-directly in the msk. When extracting a sk, I'll compute the exponent, exp, first
-and them, apply the g2^exp. This will reduce the exponential operation from 8
-to 4.
+:Note: The implementation is different from what the paper described. Generally speaking,  instead of storing msk= { \alpha, g_2^{d_1^*}, g_2^{d_2^*} } as the master secret key, we stored \msk= \{ \alpha, d_1^*, d_2^* \}.
+And for the computation of sk_id, we first compute (\alpha + r ID)d_1^* - r \d_2^*$ then apply the exponential operation. This reduce the G2 exponentials from 8 to 4. This is the same trick we used in improving N04(Waters05) scheme.
 '''
 from charm.toolbox.pairinggroup import PairingGroup,ZR,G1,G2,GT,pair
+from charm.toolbox.matrixops import *
 from charm.core.crypto.cryptobase import *
 from charm.toolbox.IBEnc import IBEnc
 
@@ -45,7 +42,6 @@ class IBE_Chen12_z(IBEnc):
         g1 = group.random(G1)
         g2 = group.random(G2)
         alpha = group.random(ZR)
-
         #generate the 4*4 dual pairing vector spaces.
         d11, d12, d13, d14 = group.random(ZR),group.random(ZR),group.random(ZR),group.random(ZR)
         d21, d22, d23, d24 = group.random(ZR),group.random(ZR),group.random(ZR),group.random(ZR)
@@ -58,22 +54,22 @@ class IBE_Chen12_z(IBEnc):
 
         one = group.random(ZR)
         
-        [D11, D12, D13, D14] = self.GaussEleminationinGroups([[d11, d12, d13, d14, one],
+        [D11, D12, D13, D14] = GaussEliminationinGroups([[d11, d12, d13, d14, one],
                                         [d21, d22, d23, d24, group.init(ZR, long(0))],
                                         [d31, d32, d33, d34, group.init(ZR, long(0))],
                                         [d41, d42, d43, d44, group.init(ZR, long(0))]])
-        [D21, D22, D23, D24] = self.GaussEleminationinGroups([[d11, d12, d13, d14, group.init(ZR, long(0))],
+        [D21, D22, D23, D24] = GaussEliminationinGroups([[d11, d12, d13, d14, group.init(ZR, long(0))],
                                         [d21, d22, d23, d24, one],
                                         [d31, d32, d33, d34, group.init(ZR, long(0))],
                                         [d41, d42, d43, d44, group.init(ZR, long(0))]])
-        [D31, D32, D33, D34] = self.GaussEleminationinGroups([[d11, d12, d13, d14, group.init(ZR, long(0))],
+        [D31, D32, D33, D34] = GaussEliminationinGroups([[d11, d12, d13, d14, group.init(ZR, long(0))],
                                         [d21, d22, d23, d24, group.init(ZR, long(0))],
                                         [d31, d32, d33, d34, one],
                                         [d41, d42, d43, d44, group.init(ZR, long(0))]])
-        [D41, D42, D43, D44] = self.GaussEleminationinGroups([[d11, d12, d13, d14, group.init(ZR, long(0))],
+        [D41, D42, D43, D44] = GaussEliminationinGroups([[d11, d12, d13, d14, group.init(ZR, long(0))],
                                         [d21, d22, d23, d24, group.init(ZR, long(0))],
                                         [d31, d32, d33, d34, group.init(ZR, long(0))],
-                                        [d41, d42, d43, d44, one]])
+                                        [d41, d42, d43, d44, one]])        
         
 
         #generate public parameters.
@@ -118,7 +114,7 @@ class IBE_Chen12_z(IBEnc):
         sk_id3 = msk['g2']**((msk['alpha']+ r * _ID) * msk['D13'] - r * msk['D23'])
         sk_id4 = msk['g2']**((msk['alpha']+ r * _ID) * msk['D14'] - r * msk['D24'])
         
-        k = { 'id':_ID, 'sk_id1':sk_id1, 'sk_id2':sk_id2, 'sk_id3':sk_id3,
+        k = { 'sk_id1':sk_id1, 'sk_id2':sk_id2, 'sk_id3':sk_id3,
               'sk_id4':sk_id4 }
         
         if(debug):
@@ -151,29 +147,6 @@ class IBE_Chen12_z(IBEnc):
         if(debug):
             print('\nDecrypt....')
         return Mprime
-
-    def GaussEleminationinGroups(self, m):
-        #eliminate columns
-        for col in range(len(m[0])):
-            for row in range(col+1, len(m)):
-                r = [(rowValue * (-(m[row][col] / m[col][col]))) for rowValue in m[col]]
-                m[row] = [ (pair[0]+pair[1]) for pair in zip(m[row], r)]
-        #now backsolve by substitution
-        ans = []
-        m.reverse() #makes it easier to backsolve
-        for sol in range(len(m)):
-                if sol == 0:
-                    ans.append(m[sol][-1] / m[sol][-2])
-                else:
-                    inner = 0
-                    #substitute in all known coefficients
-                    for x in range(sol):
-                        inner += (ans[x]*m[sol][-2-x])
-                    #the equation is now reduced to ax + b = c form
-                    #solve with (c - b) / a
-                    ans.append((m[sol][-1]-inner)/m[sol][-sol-2])
-        ans.reverse()
-        return ans
 
 def main():
 

@@ -9,18 +9,14 @@
 :Authors:	Gary Belvin
 :Date:			06/2011
 
-:Improved by: Fan Zhang, 3/2013
-:Note:
-1. e(g1,g2) is pre-calculated as part of public parameters.
-2. Previous implemenaton was trying to multiply an element in G1 with an element
-in ZR, which sometimes cause the compiler throw an error. I fixed that problem
-by having U_z in ZR and calculate g^U_z. Now, elements are in the right group.
-3. I stored U_z and u as part of msk. This will speed up the extract() a lot.
-The trick is that, instead of doing exponential operation and then multiply
-all together, I compute the exponent first and then do one exponential operation
-4. sk are in G2 and ct are in G1 now. Before that, we have 1 element in G1 and
-the other in G2 in both sk and ct.
-
+:Improved by: Fan Zhang(zfwise@gwu.edu), supported by GWU computer science department
+:Date: 3/2013
+:Notes:
+1.e(g_1, g_2) is pre-calculated  as part of public parameters.
+2.Previous implementation was trying to do: d1 = mk[`U'][i] ** v[i], we fixed the problem by having $\vec{\omega}$ as a vector in Z_q and u = g^{\vec{\omega}} as U. 
+3. We stored \vec{\omega}  as part of msk. This will speed up the extract() a lot. The trick is that, instead of doing exponential operation and then multiply all together, we will compute the exponent first and then do one exponential operation
+4 The code works perfectly under asymmetric groups now.
+5.All elements in sk_id is now in G2 and ct_id in G1. Before that, we have one element in G1 and the other in G2 in both sk_id and ct_id.
 ''' 
 from __future__ import print_function
 from charm.toolbox.pairinggroup import PairingGroup,ZR,G1,G2,GT,pair
@@ -87,22 +83,24 @@ class IBE_N04_z(IBEnc):
         pk = {'g':g, 'g1':g1, 'g2': g2, 'uPrime':uprime, 'U': U, 
             'n':n, 'l':l, 'eg1g2':pair(g1, g2)}
 
-        mk = {'g2^alpha': g2 ** alpha, 'U_z':U_z, 'u':u} #master secret
+        mk = {'g1':g1, 'g2': g2, 'n':n, 'g2^alpha': g2 ** alpha, 'U_z':U_z, 'u':u} #master secret
         if debug: 
             print(mk)
         
         return (pk, mk)
         
-    def extract(self, pk, mk, v):
+    def extract(self, mk, ID):
         '''v = (v1, .., vn) is an identity'''
+
+        v = waters_hash.hash(ID)
         r = group.random(ZR)
         
         u = mk['u']
 
-        for i in range(pk['n']):
+        for i in range(mk['n']):
             u += mk['U_z'][i] * v[i]    
-        d1 = mk['g2^alpha'] * (pk['g2'] ** (u * r) )
-        d2 = pk['g2'] ** r
+        d1 = mk['g2^alpha'] * (mk['g2'] ** (u * r) )
+        d2 = mk['g2'] ** r
         
         if debug:
             print("D1    =>", d1)
@@ -110,13 +108,15 @@ class IBE_N04_z(IBEnc):
         return {'d1': d1, 'd2':d2}
 
     def encrypt(self, pk, ID, M): # M:GT
+
+        v = waters_hash.hash(ID)
         t = group.random(ZR)
         c1 = (pk['eg1g2'] ** t) * M
         c2 = pk['g'] ** t
         c3 = pk['uPrime']
 
         for i in range(pk['n']):
-            c3 *= pk['U'][i] ** ID[i]
+            c3 *= pk['U'][i] ** v[i]
         c3 = c3 ** t
         
         if debug:
@@ -145,10 +145,9 @@ def main():
     (master_public_key, master_key) = ibe.setup()
 
     ID = "bob@mail.com"
-    kID = waters_hash.hash(ID)
-    secret_key = ibe.extract(master_public_key, master_key, kID)
+    secret_key = ibe.extract(master_key, ID)
     msg = group.random(GT)
-    cipher_text = ibe.encrypt(master_public_key, kID, msg)
+    cipher_text = ibe.encrypt(master_public_key, ID, msg)
     decrypted_msg = ibe.decrypt(master_public_key, secret_key, cipher_text)
     assert msg == decrypted_msg, "invalid decryption"
     if debug: print("Successful Decryption!")
